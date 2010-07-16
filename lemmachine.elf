@@ -1,0 +1,174 @@
+bool : type.
+true : bool.
+false : bool.
+
+status : type.
+internal-error : status.
+service-unavailable : status.
+request-uri-too-long : status.
+bad-request : status.
+not-implemented : status.
+method-not-allowed : status.
+
+method : type.
+head : method.
+get : method.
+put : method.
+delete : method.
+post : method.
+trace : method.
+connect : method.
+options : method.
+
+mlist : type.
+mnil : mlist.
+mcons : method -> mlist -> mlist.
+, = mcons.
+%infix right 1 ,.
+
+methods = head , get , put , delete , post , trace , connect , options , mnil.
+
+request : type.
+req : method -> request.
+
+% Helpers
+
+method-of : request -> method -> type.
+- : method-of (req M) M.
+%mode method-of +R -M.
+%worlds () (method-of _ _).
+%total {} (method-of _ _).
+
+elem : method -> mlist -> bool -> type.
+- : elem _ mnil false.
+- : elem M (mcons M _) true.
+- : elem M (mcons _ L) B
+     <- elem M L B.
+%mode elem +M +L -B.
+%worlds () (elem _ _ _).
+%total L (elem _ L _).
+
+% Hooks
+
+service-available : request -> bool -> type.
+- : service-available _ true.
+%mode service-available +R -B.
+%worlds () (service-available _ _).
+%total {} (service-available _ _).
+
+known-methods : request -> mlist -> type.
+- : known-methods _ methods.
+%mode known-methods +R -L.
+%worlds () (known-methods _ _).
+%total {} (known-methods _ _).
+
+uri-too-long : request -> bool -> type.
+- : uri-too-long _ false.
+%mode uri-too-long +R -B.
+%worlds () (uri-too-long _ _).
+%total {} (uri-too-long _ _).
+
+allowed-methods : request -> mlist -> type.
+- : allowed-methods _ (head , get , mnil).
+%mode allowed-methods +R -L.
+%worlds () (allowed-methods _ _).
+%total {} (allowed-methods _ _).
+
+malformed-request : request -> bool -> type.
+- : malformed-request _ false.
+%mode malformed-request +R -B.
+%worlds () (malformed-request _ _).
+%total {} (malformed-request _ _).
+
+% Decisions
+
+b9' : request -> bool -> status -> type.
+- : b9' _ true bad-request.
+- : b9' R false internal-error.
+%mode b9' +R +B -S.
+%worlds () (b9' _ _ _).
+%total {} (b9' _ _ _).
+
+b9 : request -> status -> type.
+- : b9 R S
+     <- malformed-request R B
+     <- b9' R B S.
+%mode b9 +R -S.
+%worlds () (b9 _ _).
+%total {} (b9 _ _).
+
+b10' : request -> bool -> status -> type.
+- : b10' _ true internal-error.
+- : b10' _ false method-not-allowed.
+%mode b10' +R +B -S.
+%worlds () (b10' _ _ _).
+%total {} (b10' _ _ _).
+
+b10 : request -> status -> type.
+- : b10 R S
+     <- allowed-methods R L
+     <- method-of R M
+     <- elem M L B
+     <- b10' R B S.
+%mode b10 +R -S.
+%worlds () (b10 _ _).
+%total {} (b10 _ _).
+
+b11' : request -> bool -> status -> type.
+- : b11' _ true request-uri-too-long.
+- : b11' R false S
+     <- b10 R S.
+%mode b11' +R +B -S.
+%worlds () (b11' _ _ _).
+%total {} (b11' _ _ _).
+
+b11 : request -> status -> type.
+- : b11 R S
+     <- uri-too-long R B
+     <- b11' R B S.
+%mode b11 +R -S.
+%worlds () (b11 _ _).
+%total {} (b11 _ _).
+
+b12' : request -> bool -> status -> type.
+- : b12' R true S
+     <- b11 R S.
+- : b12' _ false not-implemented.
+%mode b12' +R +B -S.
+%worlds () (b12' _ _ _).
+%total {} (b12' _ _ _).
+
+b12 : request -> status -> type.
+- : b12 R S
+     <- known-methods R L
+     <- method-of R M
+     <- elem M L B
+     <- b12' R B S.
+%mode b12 +R -S.
+%worlds () (b12 _ _).
+%total {} (b12 _ _).
+
+b13' : request -> bool -> status -> type.
+- : b13' R true S
+     <- b12 R S.
+- : b13' _ false service-unavailable.
+%mode b13' +R +B -S.
+%worlds () (b13' _ _ _).
+%total {} (b13' _ _ _).
+
+b13 : request -> status -> type.
+- : b13 R S
+     <- service-available R B
+     <- b13' R B S.
+%mode b13 +R -S.
+%worlds () (b13 _ _).
+%total {} (b13 _ _).
+
+resolve-status : request -> status -> type.
+- : resolve-status R S
+     <- b13 R S.
+%mode resolve-status +R -S.
+%worlds () (resolve-status _ _).
+%total {} (resolve-status _ _).
+
+%query * * P : resolve-status (req post) S.

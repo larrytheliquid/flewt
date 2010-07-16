@@ -1,0 +1,26 @@
+(data Bool true false)
+
+(data Status
+  internal-error
+  service-unavailable
+  request-uri-too-long
+  bad-request
+  not-implemented
+  method-not-allowed)
+
+(data Method
+  head get put
+  delete post trace
+  connect options)
+
+(data Mlist
+  mnil
+  [mcons Method Mlist])
+
+(data Request
+  [req Method])
+
+(fun [method-of Request Method]
+  [req m] m)
+
+
