@@ -1,5 +1,5 @@
-class Flewt::Lexer
-  KEYWORDS = %w[data fun]
+class Lexer::Lexer
+  KEYWORDS = %w[data]
 
   def tokenize code
     code = code.strip
@@ -9,10 +9,15 @@ class Flewt::Lexer
     while i < code_size
       chunk = code[i..-1]
 
-      if false
-        # noop
+      if literal = chunk[/\A[A-Za-z][-\w]*/]
+        tokens << if KEYWORDS.include?(literal)
+          [literal.upcase.to_sym, literal]
+        else
+          [:LITERAL, literal]
+        end
+        i += literal.size
 
-      elsif space = chunk[/\A(\s+)/, 1]
+      elsif space = chunk[/\A\s+/]
         i += space.size
 
       else token = chunk[0,1]
