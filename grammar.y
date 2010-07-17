@@ -13,7 +13,8 @@ rule
   ;
 
   Statement:
-    '(' DATA LITERAL Constructors ')'                 { result = Node::Data.new val[2], val[3] }
+    '(' DATA LITERAL ')'                                  { result = Node::Data.new val[2], [] }
+  | '(' DATA LITERAL Constructors ')'                 { result = Node::Data.new val[2], val[3] }
   ;
 
   Constructors:

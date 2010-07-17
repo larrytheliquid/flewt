@@ -1,4 +1,4 @@
-class Lexer::Lexer
+class Flewt::Lexer
   KEYWORDS = %w[data]
 
   def tokenize code
