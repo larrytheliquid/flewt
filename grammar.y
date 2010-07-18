@@ -13,7 +13,7 @@ rule
   ;
 
   Statement:
-    '(' DATA LITERAL ')'                                  { result = Node::Data.new val[2], [] }
+    '(' DATA LITERAL ')'                              { result = Node::Data.new val[2], [] }
   | '(' DATA LITERAL Constructors ')'                 { result = Node::Data.new val[2], val[3] }
   ;
 
@@ -22,8 +22,14 @@ rule
   | Constructors Constructor                          { result = val[0] << val[1] }
   ;
 
+  Literals:
+    LITERAL                                       { result = Array.[] Node::Literal.new(val[0]) }
+  | Literals LITERAL                              { result = val[0] << val[1] }
+  ;
+
   Constructor:
-    LITERAL                                           { result = Node::Literal.new val[0] }
+    LITERAL                                     { result = Node::Literal.new val[0] }
+  | '[' Literals ']'                            { result = val[1] }
   ;
 end
 
